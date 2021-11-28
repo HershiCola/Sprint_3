@@ -1,6 +1,6 @@
 package ru.praktikumservices.qascooter;
 
-import io.restassured.RestAssured;
+import io.qameta.allure.junit4.DisplayName;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -10,14 +10,10 @@ import static io.restassured.RestAssured.given;
 
 public class CourierLoginApiMethodsTest {
 
-    private final String SCOOTER_API_SERVICES_URL = "http://qa-scooter.praktikum-services.ru/";
-
-    ScooterCourierMakerAndOperationsHelper courier = new ScooterCourierMakerAndOperationsHelper();
-
+        ScooterCourierMakerAndOperationsHelper courier = new ScooterCourierMakerAndOperationsHelper();
 
     @Before
     public void setUp() {
-        RestAssured.baseURI = SCOOTER_API_SERVICES_URL;
         courier.generateCourierCredentials();
     }
 
@@ -27,6 +23,7 @@ public class CourierLoginApiMethodsTest {
     }
 
     @Test //курьер может авторизваться + успешный запрос возвращает id
+    @DisplayName("Тест на успешный логин курьера")
     public void courierLoginSuccess (){
         courier.registerCourier();
         courier.courierLoggingIn();
@@ -34,21 +31,16 @@ public class CourierLoginApiMethodsTest {
         assertNotEquals(0, courier.getCourierId());
     }
 
-    @Test //незарегистрированный курьер не может залогиниться = система возвращает ошибку если указать неверный логин и пароль
-    public void unregisteredCourierLoginFails(){
-        courier.courierLoggingIn();
-        assertEquals(404, courier.getCourierResponse().getStatusCode());
-    }
-
     //два теста ниже: для авторизации нужны все обязательные поля, если какого-то из полей нет - вернет ошибку
-    @Test(timeout = 10000) //баг системы qa-scooter, вечный запрос при отсутствии пароля
+    @Test(timeout = 5000) //баг системы qa-scooter, вечный запрос при отсутствии пароля
+    @DisplayName("Тест на попытку логина курьера без передачи поля пароля")
     public void courierLoginWithoutPasswordFails () {
 
         courier.registerCourier();
+
         String loginRequestBody = "{\"login\":\"" + courier.getCourierLogin() + "\"}";
         courier.setCourierResponse(given()
-                .header("Content-type", "application/json")
-                .and()
+                .spec(courier.setupAssured())
                 .body(loginRequestBody)
                 .when()
                 .post("/api/v1/courier/login"));
@@ -56,13 +48,14 @@ public class CourierLoginApiMethodsTest {
     }
 
     @Test
+    @DisplayName("Тест на попытку логина курьера без передачи поля логина")
     public void courierLoginWithoutLoginFails () {
 
         courier.registerCourier();
+
         String loginRequestBody = "{\"password\":\"" + courier.getCourierPassword() + "\"}";
         courier.setCourierResponse(given()
-                .header("Content-type", "application/json")
-                .and()
+                .spec(courier.setupAssured())
                 .body(loginRequestBody)
                 .when()
                 .post("/api/v1/courier/login"));

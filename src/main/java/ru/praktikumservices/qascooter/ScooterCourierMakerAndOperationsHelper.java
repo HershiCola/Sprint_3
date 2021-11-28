@@ -1,16 +1,17 @@
 package ru.praktikumservices.qascooter;
 
+import io.qameta.allure.Step;
 import io.restassured.response.Response;
 import org.apache.commons.lang3.RandomStringUtils;
 import static io.restassured.RestAssured.given;
 
 //класс, описывающий работу сервиса (в отношении курьера)
-public class ScooterCourierMakerAndOperationsHelper {
+public class ScooterCourierMakerAndOperationsHelper extends RestAssuredSpecForTests{
 
     private String courierLogin;
     private String courierPassword;
     private String courierFirstName;
-    private int courierId;
+    private int courierId = 0;
 
     private Response courierResponse;
 
@@ -31,6 +32,7 @@ public class ScooterCourierMakerAndOperationsHelper {
         return courierFirstName;
     }
 
+    @Step("Кладем в поле класса ответ для дальнейшей работы с ним")
     public void setCourierResponse(Response courierResponse) {
         this.courierResponse = courierResponse;
     }
@@ -39,7 +41,7 @@ public class ScooterCourierMakerAndOperationsHelper {
         return courierId;
     }
 
-
+    @Step("Генерация полей курьера для регистрации")
     public void generateCourierCredentials() {
 
         courierLogin = RandomStringUtils.randomAlphabetic(10);
@@ -47,6 +49,7 @@ public class ScooterCourierMakerAndOperationsHelper {
         courierFirstName = RandomStringUtils.randomAlphabetic(10);
     }
 
+    @Step("Запрос на регистрацию курьера")
     public void registerCourier() {
 
         String registerRequestBody = "{\"login\":\"" + courierLogin + "\","
@@ -54,27 +57,40 @@ public class ScooterCourierMakerAndOperationsHelper {
                 + "\"firstName\":\"" + courierFirstName + "\"}";
 
         courierResponse = given()
-                .header("Content-type", "application/json")
-                .and()
+                .spec(setupAssured())
                 .body(registerRequestBody)
                 .when()
                 .post("/api/v1/courier");
     }
 
-        public void courierLoggingIn () {
+    @Step("Запрос на логин пользователя")
+    public void courierLoggingIn () {
 
             String requestByLoginAndPass = "{\"login\": \"" + courierLogin + "\", \"password\": \"" + courierPassword + "\"}";
-            courierResponse = given().header("Content-type", "application/json").and()
+            courierResponse = given().spec(setupAssured())
                     .body(requestByLoginAndPass).when().post("/api/v1/courier/login");
-        }
+    }
 
-        public void setCourierId () {
-            courierId = courierResponse.then().extract().path("id");
-        }
 
-        public void deleteCourier () {
+    @Step("Сохранение айди из ответа после логина")
+    public void setCourierId () {
+            courierId = courierResponse
+                    .then()
+                    .extract()
+                    .path("id");
+    }
+
+    @Step("Метод удаления курьера")
+    public void deleteCourier () {
+
+            courierLoggingIn();
+            setCourierId();
+
             if (courierId != 0) {
-                courierResponse = given().when().delete("/api/v1/courier/" + courierId);
+                courierResponse = given()
+                        .spec(setupAssured())
+                        .when()
+                        .delete("/api/v1/courier/" + courierId);
             }
         }
     }

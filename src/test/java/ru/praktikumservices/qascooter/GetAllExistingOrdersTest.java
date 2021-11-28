@@ -1,33 +1,30 @@
 package ru.praktikumservices.qascooter;
 
-import io.restassured.RestAssured;
-import org.junit.Before;
+import io.qameta.allure.junit4.DisplayName;
 import org.junit.Test;
+import java.util.List;
 
 import static org.junit.Assert.*;
 import static io.restassured.RestAssured.given;
 
+public class GetAllExistingOrdersTest extends RestAssuredSpecForTests {
 
-public class GetAllExistingOrdersTest {
 
-    private final String SCOOTER_API_SERVICES_URL = "http://qa-scooter.praktikum-services.ru/";
-
-    @Before
-    public void setUp() {
-        RestAssured.baseURI = SCOOTER_API_SERVICES_URL;
-    }
-
-    @Test //если в ответе есть хоть одно поле ID, значит заказы есть
+    @Test //проверку переделал по примеру с вебинара, собираем список и проверяем что он не пуст
+    @DisplayName("Тест на проверку того, что запрос возвращает список заказов")
     public void isReturnedOrderListNotEmpty (){
 
-        String ordersListFromResponse = given()
-                .when()
-                .get("/api/v1/orders")
-                .then()
-                .assertThat()
-                .statusCode(200)
-                .extract().body().asString();
+                List<Object> orders = given()
+                        .spec(setupAssured())
+                        .when()
+                        .get("/api/v1/orders")
+                        .then()
+                        .extract()
+                        .jsonPath()
+                        .getList("orders");
 
-        assertTrue(ordersListFromResponse.contains("id"));
+                assertFalse(orders.isEmpty());
     }
 }
+
+

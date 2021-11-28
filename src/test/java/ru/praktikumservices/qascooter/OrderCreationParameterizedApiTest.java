@@ -1,7 +1,6 @@
 package ru.praktikumservices.qascooter;
 
-import io.restassured.RestAssured;
-import org.junit.Before;
+import io.qameta.allure.junit4.DisplayName;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -11,9 +10,8 @@ import static org.junit.Assert.*;
 
 
 @RunWith(Parameterized.class)
-public class OrderCreationParameterizedApiTest {
+public class OrderCreationParameterizedApiTest extends RestAssuredSpecForTests{
 
-    private final String SCOOTER_API_SERVICES_URL = "http://qa-scooter.praktikum-services.ru/";
     private final String color;
     private final int unexpectedNumber;
 
@@ -21,11 +19,6 @@ public class OrderCreationParameterizedApiTest {
             this.color = color;
             this.unexpectedNumber = unexpectedNumber;
     };
-
-    @Before
-    public void setUp() {
-        RestAssured.baseURI = SCOOTER_API_SERVICES_URL;
-    }
 
     @Parameterized.Parameters
     //использую два параметра на случай,
@@ -41,8 +34,10 @@ public class OrderCreationParameterizedApiTest {
     }
 
     @Test
+    @DisplayName("Параметризованный тест на создание заказа")
     public void createOrderParameterizedTest(){
 
+        //Генерацию JSON не давали ни в курсе, ни на вебинарах.
         String createOrderRequestBody = "{\"firstName\":\"TestName\","
                 + "\"lastName\":\"TestLastName\","
                 + "\"address\":\"Dmitrov City, 666\","
@@ -54,14 +49,11 @@ public class OrderCreationParameterizedApiTest {
                 + color +"}";
 
         int returnedTrackNumber = given()
-        .header("Content-type", "application/json")
-                .and()
+                .spec(setupAssured())
                 .body(createOrderRequestBody)
                 .when()
                 .post("/api/v1/orders")
                 .then()
-                .assertThat()
-                .statusCode(201)
                 .extract()
                 .path("track");
 
